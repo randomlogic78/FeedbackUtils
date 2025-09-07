@@ -1,9 +1,10 @@
 // Setup apps script constants.
 const SS = SpreadsheetApp.getActiveSpreadsheet();
-const RUBRIC = SS.getActiveSheet();
+const RUBRIC = SS.getActiveSheet(); // TODO add something to choose assessment instead of relying on active sheet.
 const RUBRIC_IDX = RUBRIC.getIndex(); // Note that sheet indexes start at 1.
 const DESTINATION_IDX = RUBRIC_IDX + 1; // Note, this is not valid until after insertFeedbackSheet() is called.
 const ASSESSMENT_NAME = RUBRIC.getName();
+// const FEEDBACK_FORM = FormApp.create(ASSESSMENT_NAME);
 const FEEDBACK_SHEET_NAME = ASSESSMENT_NAME + "_Feedback";
 const ROSTER_SHEET_NAME = "Roster"; // Note: This sheet must exist in the SS with this name
 
@@ -21,17 +22,44 @@ function generateFeedbackForm() {
   
   // Generate a complete feedback google form for a particular assessment
   const FEEDBACK_FORM = FormApp.create(ASSESSMENT_NAME);
+  const RESPONDER_LINK = FEEDBACK_FORM.getPublishedUrl();
   const feedback_sheet = insertFeedbackSheet(FEEDBACK_FORM);
   const student_names = getStudentNames();
   const roster_item = addRosterSelector(FEEDBACK_FORM, student_names);
   const late_item = addLateAssignmentChoice(FEEDBACK_FORM);
   const question_data = readQuestionData();
-
   for (const question in question_data) {
     addFeedbackItem(FEEDBACK_FORM, `Q${Number(question)+1}`, question_data[question]);
   }
 
+  // Insert responder link into rubric and activate cell
+  const responderLinkCell = RUBRIC.insertColumnAfter(3)
+                                  .getRange('D1')
+                                  .setShowHyperlink(true)
+                                  .setRichTextValue(linkCellContents("Start Grading", RESPONDER_LINK))
+                                  .activateAsCurrentCell(); 
+
+  SpreadsheetApp.flush();
+
+  // IDs for troubleshooting 
+  Logger.log("Feedback form ID: " + FEEDBACK_FORM.getId());
+  Logger.log("Assessment Spreadsheet ID: " + SS.getId());
+  Logger.log("Responder link: " + RESPONDER_LINK);
+
   return 0;
+
+}
+
+function linkCellContents(cellText, url) {
+  
+  // Create a hyperlink to add to a cell
+  const richValue = SpreadsheetApp.newRichTextValue()
+                                  .setText(cellText)
+                                  .setLinkUrl(url)
+                                  .build();
+
+  return richValue;
+
 }
 
 function insertFeedbackSheet(FEEDBACK_FORM) {
@@ -55,11 +83,8 @@ function insertFeedbackSheet(FEEDBACK_FORM) {
   SS.setActiveSheet(feedback_sheet);
   SS.moveActiveSheet(DESTINATION_IDX);
 
-  // IDs for troubleshooting 
-  Logger.log("Feedback form ID: " + FEEDBACK_FORM.getId());
-  Logger.log("Assessment Spreadsheet ID: " + SS.getId());
-  Logger.log("Destination sheet ID: " + destination_sheet_id);
 
+  Logger.log("Destination sheet ID: " + destination_sheet_id); 
   return feedback_sheet;
 
 }
