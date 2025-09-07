@@ -1,13 +1,50 @@
-# FeedbackUtils
+# README – Feedback Utilities
 
-This script is designed to be bound to a spreadsheet with the onOpen trigger set to run the onOpen function.
+## Pull Requests
 
-The script requires that a sheet with the name 'Roster' exists with 1 header row. Additionally, the assessments must be on individual sheets with columns: 'Question', 'Rubric', 'Points Possible'.
+Feel free to make pull requests. Pull requests should be related to a specific [issue](https://github.com/randomlogic78/FeedbackUtils/issues)
 
-The Question column is expected to have the full text of the question.
-The Rubric column is expected to have a description of thow the question is to be greaded. This could include a detailed rubric, or simply an answer to the question.
-The Points Possible column should simply have a number of points a question may be awared.
+### Pull Request Process
 
-The Feedback form will then be generated in the root of your google drive with the same name as the sheet in the spreadsheet. You do not need to publish your form to use it. You can just copy the responder link, and go to that address to begin grading.
+1. Identify a current Issue (or create a new issue)
+2. Create a new branch with a name that references the Issue
+3. Write your patch
+4. Test your patch (include testing environment in pull request)
+5. Submit pull request
 
-Once you are completed with your grading, your scoring and feedback will be saved in a new sheet in the spreadsheet you generated the form from. You can then export this data to CSV, or use it however you like to add to your LMS, or normal student feedback channels.
+## Overview
+
+This script should be attached to a Google Spreadsheet and triggered by the **onOpen** event (i.e., the `onOpen` function runs automatically whenever the spreadsheet is opened).
+
+## Required Sheet Structure  
+
+### 1. Roster Sheet  
+- Must be named **`Roster`**.  
+- Contains a single header row (at least one data rows are required).
+
+### 2. Assessment Sheets  
+- Each assessment resides on its own sheet.  
+- Every assessment sheet must contain the following three columns **with exact headings**:
+
+| Column Header      | Expected Content                                                                 |
+|--------------------|-----------------------------------------------------------------------------------|
+| **Question**       | The full text of each question.                                                   |
+| **Rubric**         | How the question should be graded – either a detailed rubric or a brief answer. |
+| **Points Possible**| A numeric value indicating the maximum points for the question.                  |
+
+## What the Script Does  
+
+- When you open the spreadsheet, a new menu is created called "Feedback Utils" 
+- Select "New Feedback Form", and the script creates a **Google Form** in the root of your Drive.  
+- The form’s title matches the name of the sheet that generated it.  
+- You don’t need to publish the form. Simply copy the **response link**, open it, and start grading.
+
+## After Grading  
+
+- All scores and feedback are written back to a **new sheet** in the original spreadsheet (the one that created the form).  
+- From there you can:  
+  - Export the data as a CSV file,  
+  - Import it into your LMS, or  
+  - Use it for any other student‑feedback workflow you prefer.
+
+

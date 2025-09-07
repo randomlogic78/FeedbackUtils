@@ -14,7 +14,7 @@ function onOpen() {
   const menuEntries = [];
   menuEntries.push({name: 'New Feedback Form', functionName: 'generateFeedbackForm'});
 
-  SS.addMenu('WA Tools', menuEntries);
+  SS.addMenu('Feedback Utils', menuEntries);
 }
 
 
