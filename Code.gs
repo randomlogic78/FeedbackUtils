@@ -4,7 +4,6 @@ const RUBRIC = SS.getActiveSheet();
 const RUBRIC_IDX = RUBRIC.getIndex(); // Note that sheet indexes start at 1.
 const DESTINATION_IDX = RUBRIC_IDX + 1; // Note, this is not valid until after insertFeedbackSheet() is called.
 const ASSESSMENT_NAME = RUBRIC.getName();
-const FEEDBACK_FORM = FormApp.create(ASSESSMENT_NAME);
 const FEEDBACK_SHEET_NAME = ASSESSMENT_NAME + "_Feedback";
 const ROSTER_SHEET_NAME = "Roster"; // Note: This sheet must exist in the SS with this name
 
@@ -14,27 +13,28 @@ function onOpen() {
   const menuEntries = [];
   menuEntries.push({name: 'New Feedback Form', functionName: 'generateFeedbackForm'});
 
-  SS.addMenu('Feedback Utils', menuEntries);
+  SS.addMenu('WA Tools', menuEntries);
 }
 
 
 function generateFeedbackForm() {
   
   // Generate a complete feedback google form for a particular assessment
-  const feedback_sheet = insertFeedbackSheet();
+  const FEEDBACK_FORM = FormApp.create(ASSESSMENT_NAME);
+  const feedback_sheet = insertFeedbackSheet(FEEDBACK_FORM);
   const student_names = getStudentNames();
-  const roster_item = addRosterSelector(student_names);
-  const late_item = addLateAssignmentChoice();
+  const roster_item = addRosterSelector(FEEDBACK_FORM, student_names);
+  const late_item = addLateAssignmentChoice(FEEDBACK_FORM);
   const question_data = readQuestionData();
 
   for (const question in question_data) {
-    addFeedbackItem(`Q${Number(question)+1}`, question_data[question]);
+    addFeedbackItem(FEEDBACK_FORM, `Q${Number(question)+1}`, question_data[question]);
   }
 
   return 0;
 }
 
-function insertFeedbackSheet() {
+function insertFeedbackSheet(FEEDBACK_FORM) {
 
   // Get the ids of the sheets prior to adding the form destination
   const sheets = SS.getSheets();
@@ -79,7 +79,7 @@ function getStudentNames() {
 }
 
 
-function addRosterSelector(student_names) {
+function addRosterSelector(FEEDBACK_FORM, student_names) {
 
   // Add the roster select item to the form and return the item for chaining.
   const roster_item = FEEDBACK_FORM.addListItem();
@@ -91,7 +91,7 @@ function addRosterSelector(student_names) {
 }
 
 
-function addLateAssignmentChoice() {
+function addLateAssignmentChoice(FEEDBACK_FORM) {
 
   // Add the item to check if an assignment is late
   const late_item = FEEDBACK_FORM.addMultipleChoiceItem();
@@ -121,7 +121,7 @@ function readQuestionData() {
 
 
 // TODO: add numeric value validation to the points earned question
-function addFeedbackItem(question_number, question_data) {
+function addFeedbackItem(FEEDBACK_FORM, question_number, question_data) {
 
   // Construct, and insert a complete feedback item
   // 1) Title/Description item -> The question and the rubric for the question
