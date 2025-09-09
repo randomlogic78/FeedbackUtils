@@ -7,16 +7,17 @@ const ASSESSMENT_NAME = RUBRIC.getName();
 // const FEEDBACK_FORM = FormApp.create(ASSESSMENT_NAME);
 const FEEDBACK_SHEET_NAME = ASSESSMENT_NAME + "_Feedback";
 const ROSTER_SHEET_NAME = "Roster"; // Note: This sheet must exist in the SS with this name
+const ROSTER_SHEET = SS.getSheetByName(ROSTER_SHEET_NAME);
 
 
 // Add Menu item
 function onOpen() {
   const menuEntries = [];
   menuEntries.push({name: 'New Feedback Form', functionName: 'generateFeedbackForm'});
+  menuEntries.push({name: 'Calculate Grades', functionName: 'calculateGrades'});
 
   SS.addMenu('WA Tools', menuEntries);
 }
-
 
 function generateFeedbackForm() {
   
@@ -38,6 +39,7 @@ function generateFeedbackForm() {
                                   .setShowHyperlink(true)
                                   .setRichTextValue(linkCellContents("Start Grading", RESPONDER_LINK))
                                   .activateAsCurrentCell(); 
+
 
   SpreadsheetApp.flush();
 
@@ -95,10 +97,9 @@ function insertFeedbackSheet(FEEDBACK_FORM) {
 function getStudentNames() {
 
   // Returns a list of strings containing the student names from the Roster sheet
-  const roster_sheet = SS.getSheetByName(ROSTER_SHEET_NAME);
-  const class_list = roster_sheet.getRange("A2:A").getValues();
+  const class_list = ROSTER_SHEET.getRange("A2:A").getValues();
   const numberOfValues = class_list.filter(String).length;
-  const student_names = roster_sheet.getRange(2,1,numberOfValues).getValues().flat();
+  const student_names = ROSTER_SHEET.getRange(2,1,numberOfValues).getValues().flat();
 
   return student_names;
 }
@@ -160,4 +161,104 @@ function addFeedbackItem(FEEDBACK_FORM, question_number, question_data) {
 
 }
 
+
+function createTotalGradeCol(sheet, header) {
+
+  // Helper function to create the total grade column in the first 
+  // free column on a designated sheet.
+  // Returns the new column's index
+  const lastCol = sheet.getLastColumn();
+  const newColIdx = lastCol + 1; // 1‑based index for Apps Script
+
+  // Write a header for the new column.
+  const headerCell = sheet.getRange(1, newColIdx);
+  headerCell.setValue(header);
+
+  return newColIdx;
+
+}
+
+function insertGrades(assessment_name, pointsRange, gradeColIdx) {
+
+
+  // Calculate the grades from the points range and
+  // Insert the data in the correct column
+  // Here is the formula
+  const formula = `IFERROR(
+    SUM(
+      FILTER(
+        ${pointsRange},
+        ${assessment_name}!B:B = $A2
+      )
+    ),
+    "Missing"
+  )`;
+
+  // Place the formula as an ARRAYFORMULA so it fills the whole column.
+  // I think this works, probably...
+  const formulaCell = ROSTER_SHEET.getRange(2, gradeColIdx);
+  formulaCell.setFormula(formula);
+
+}
+
+function columnToLetter(col) {
+
+  // Creates the letter designator for a column number.
+  // I feel like this should already be build in,
+  // hopefully I didn't do this for no reason
+  let letter = '';
+  while (col > 0) {
+    const mod = (col - 1) % 26;
+    letter = String.fromCharCode(65 + mod) + letter;
+    col = Math.floor((col - mod) / 26);
+  }
+  return letter;
+}
+
+function calculateGrades() {
+
+
+  // Calculates the Grades for the active sheet, and adds a new column to the
+  // Roster sheet
+  const grade_sheet = SpreadsheetApp.getActiveSheet();
+  const assessment_name = grade_sheet.getName();
+  const final_grade_idx = createTotalGradeCol(ROSTER_SHEET, assessment_name);
+  const points_range = getPointsRange(grade_sheet);
+  insertGrades(assessment_name, points_range, final_grade_idx);
+
+  return 0;
+
+}
+
+function getPointsRange(feedback_sheet) {
+
+
+  // Returns the range of columns that has the point 
+  // values earned on the assessment for all entries
+  const headerValues = feedback_sheet.getRange(1, 1, 1, feedback_sheet.getLastColumn()).getValues()[0];
+
+  const pointCols = [];
+  const pointsRegex = /^Q\d+\s+Points\s+out\s+of\s*\d+$/i;
+
+  for (let i = 0; i < headerValues.length; i++) {
+    const title = headerValues[i];
+    if (typeof title === 'string' && pointsRegex.test(title.trim())) {
+      pointCols.push(columnToLetter(i + 1));
+    }
+  }
+
+  if (pointCols.length === 0) {
+    Logger.log('No “Points out of …” columns found on the feedback sheet.');
+    return;
+  }
+
+  // Build the FILTER range string that pulls the points for a given student.
+  // Example of the range part we need:
+  // {Feedback!D:D, Feedback!F:F, Feedback!H:H}
+  const rangeParts = pointCols.map(col => `${feedback_sheet.getName()}!${col}:${col}`);
+  const pointsRange = `{${rangeParts.join(',')}}`;
+
+  return pointsRange;
+
+}
 
