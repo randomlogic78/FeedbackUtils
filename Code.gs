@@ -196,7 +196,7 @@ function insertGrades(assessment_name, pointsRange, gradeColIdx) {
 
   // Place the formula as an ARRAYFORMULA so it fills the whole column.
   // I think this works, probably...
-  const formulaCell = ROSTER_SHEET.getRange(2, gradeColIdx);
+  const formulaCell = ROSTER_SHEET.getRange(2, gradeColIdx, ROSTER_SHEET.getLastRow()-1,1);
   formulaCell.setFormula(formula);
 
 }
